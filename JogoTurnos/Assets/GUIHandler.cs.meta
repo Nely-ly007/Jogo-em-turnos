@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: cb45641f140274c49b37708e86ff202e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 3619
+  packageName: 'Tic-Tac-Two: Turn-Based Game Tutorial v2.1'
+  packageVersion: 2.1
+  assetPath: Assets/GUIHandler.cs
+  uploadId: 30869
