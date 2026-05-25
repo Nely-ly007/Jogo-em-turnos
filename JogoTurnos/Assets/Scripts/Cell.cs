@@ -1,10 +1,11 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// Representa uma célula do tabuleiro.
-/// Gerencia clique, visual e animação.
+/// Usa TextMeshPro para exibir X e O — sem sprites necessários.
 /// </summary>
 [RequireComponent(typeof(Button))]
 public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -13,22 +14,18 @@ public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     //  Inspector
     // ─────────────────────────────────────────────────────────────
     [Header("Referências")]
-    [SerializeField] private Image _symbolImage;
+    [SerializeField] private TextMeshProUGUI _symbolText;
     [SerializeField] private Image _backgroundImage;
 
-    [Header("Sprites")]
-    [SerializeField] private Sprite _xSprite;
-    [SerializeField] private Sprite _oSprite;
-
     [Header("Cores")]
-    [SerializeField] private Color _defaultColor  = new Color(0.15f, 0.15f, 0.20f);
-    [SerializeField] private Color _hoverColor    = new Color(0.22f, 0.22f, 0.30f);
-    [SerializeField] private Color _xColor        = new Color(0.93f, 0.35f, 0.35f);
-    [SerializeField] private Color _oColor        = new Color(0.35f, 0.75f, 0.93f);
-    [SerializeField] private Color _winColor      = new Color(1.00f, 0.85f, 0.20f);
+    [SerializeField] private Color _defaultColor = new Color(0.15f, 0.15f, 0.20f);
+    [SerializeField] private Color _hoverColor   = new Color(0.22f, 0.22f, 0.30f);
+    [SerializeField] private Color _xColor       = new Color(0.93f, 0.35f, 0.35f);
+    [SerializeField] private Color _oColor       = new Color(0.35f, 0.75f, 0.93f);
+    [SerializeField] private Color _winColor     = new Color(1.00f, 0.85f, 0.20f);
 
     [Header("Animação")]
-    [SerializeField] private float _popDuration   = 0.25f;
+    [SerializeField] private float _popDuration  = 0.25f;
     [SerializeField] private AnimationCurve _popCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     // ─────────────────────────────────────────────────────────────
@@ -46,9 +43,17 @@ public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         _button = GetComponent<Button>();
         _button.onClick.AddListener(OnClick);
+        _button.transition = Selectable.Transition.None;
         SetBackground(_defaultColor);
-        _symbolImage.gameObject.SetActive(false);
+
+        // Esconde via componente, não desativa o GameObject
+        if (_symbolText != null)
+        {
+            _symbolText.enabled = false;
+            _symbolText.transform.localScale = Vector3.one;
+        }
     }
+
 
     private void OnDestroy()
     {
@@ -71,14 +76,16 @@ public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         _owner = player;
         _button.interactable = false;
 
-        _symbolImage.sprite  = player == GameManager.Player.X ? _xSprite : _oSprite;
-        _symbolImage.color   = player == GameManager.Player.X ? _xColor  : _oColor;
-        _symbolImage.gameObject.SetActive(true);
+        if (_symbolText != null)
+        {
+            _symbolText.text  = player == GameManager.Player.X ? "X" : "O";
+            _symbolText.color = player == GameManager.Player.X ? _xColor : _oColor;
+            _symbolText.enabled = true; // ← liga o componente, não o GameObject
+        }
 
-        // Pop animation
         StartCoroutine(PopAnimation());
     }
-
+    
     public void HighlightAsWin()
     {
         _isWinCell = true;
@@ -89,14 +96,21 @@ public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public void Reset()
     {
         StopAllCoroutines();
-        _owner = GameManager.Player.None;
+        _owner     = GameManager.Player.None;
         _isWinCell = false;
         _button.interactable = true;
-        _symbolImage.gameObject.SetActive(false);
-        _symbolImage.transform.localScale = Vector3.one;
+
+        if (_symbolText != null)
+        {
+            _symbolText.enabled = false; // ← desliga o componente
+            _symbolText.transform.localScale = Vector3.one;
+        }
+
+        if (_backgroundImage != null)
+            _backgroundImage.transform.localScale = Vector3.one;
+
         SetBackground(_defaultColor);
     }
-
     // ─────────────────────────────────────────────────────────────
     //  Eventos de mouse
     // ─────────────────────────────────────────────────────────────
@@ -123,12 +137,14 @@ public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Animações (corrotinas — sem dependências externas)
+    //  Animações
     // ─────────────────────────────────────────────────────────────
 
     private System.Collections.IEnumerator PopAnimation()
     {
-        Transform t = _symbolImage.transform;
+        if (_symbolText == null) yield break;
+
+        Transform t = _symbolText.transform;
         float elapsed = 0f;
 
         while (elapsed < _popDuration)
@@ -145,6 +161,8 @@ public class Cell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 
     private System.Collections.IEnumerator PulseAnimation()
     {
+        if (_backgroundImage == null) yield break;
+
         Transform t = _backgroundImage.transform;
         float speed = 2.5f;
 

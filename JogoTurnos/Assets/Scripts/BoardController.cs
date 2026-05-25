@@ -36,12 +36,29 @@ public class BoardController : MonoBehaviour
         BuildBoard();
     }
 
-    private void OnEnable()
+    // REMOVA OnEnable e OnDisable, substitua por:
+
+    private void Start()
     {
-        if (GameManager.Instance == null) return;
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("[BoardController] GameManager.Instance é null no Start!");
+            return;
+        }
+
         GameManager.Instance.OnCellChanged.AddListener(OnCellChanged);
         GameManager.Instance.OnBoardReset.AddListener(OnBoardReset);
         GameManager.Instance.OnGameStateChanged.AddListener(OnGameStateChanged);
+
+        Debug.Log("[BoardController] Listeners registrados com sucesso.");
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance == null) return;
+        GameManager.Instance.OnCellChanged.RemoveListener(OnCellChanged);
+        GameManager.Instance.OnBoardReset.RemoveListener(OnBoardReset);
+        GameManager.Instance.OnGameStateChanged.RemoveListener(OnGameStateChanged);
     }
 
     private void OnDisable()
@@ -77,6 +94,7 @@ public class BoardController : MonoBehaviour
 
     private void OnCellChanged(int index, GameManager.Player player)
     {
+        Debug.Log($"[BoardController] OnCellChanged recebido! index={index} player={player}");
         if (index >= 0 && index < 9)
             _cells[index].SetSymbol(player);
     }

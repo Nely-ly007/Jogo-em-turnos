@@ -88,7 +88,11 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void Start() => StartGame();
+    private void Start()
+    {
+        Debug.Log("[GameManager] Iniciado. Começando nova partida...");
+        StartGame();
+    }
 
     // ─────────────────────────────────────────────────────────────
     //  API Pública
@@ -101,6 +105,7 @@ public class GameManager : MonoBehaviour
         _moveCount = 0;
         SetState(GameState.PlayerXTurn);
         OnBoardReset?.Invoke(_board);
+        Debug.Log("[GameManager] Tabuleiro resetado. Vez do Player X.");
     }
 
     /// <summary>
@@ -109,9 +114,17 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public bool TryMakeMove(int cellIndex)
     {
-        if (!IsGameActive()) return false;
+        if (!IsGameActive())
+        {
+            Debug.LogWarning($"[GameManager] Jogada ignorada — jogo não está ativo. State: {_state}");
+            return false;
+        }
         if (cellIndex < 0 || cellIndex > 8) return false;
-        if (_board[cellIndex] != Player.None) return false;
+        if (_board[cellIndex] != Player.None)
+        {
+            Debug.LogWarning($"[GameManager] Célula {cellIndex} já ocupada!");
+            return false;
+        }
 
         // Em modo rede, só aceita jogada do jogador local
         if (networkMode && CurrentPlayer != localPlayer) return false;
@@ -143,20 +156,30 @@ public class GameManager : MonoBehaviour
     {
         _board[index] = player;
         _moveCount++;
+
+        // Log da jogada no formato solicitado
+        int linha  = index / 3 + 1;
+        int coluna = index % 3 + 1;
+        Debug.Log($"Jogada: ({linha},{coluna}) — Player {player}");
+
         OnCellChanged?.Invoke(index, player);
 
         if (CheckWin(player))
         {
+            Debug.Log($"★ Player {player} venceu a rodada!");
             SetState(player == Player.X ? GameState.PlayerXWon : GameState.PlayerOWon);
             return;
         }
 
         if (_moveCount == 9)
         {
+            Debug.Log("★ Empate! Nenhum jogador venceu.");
             SetState(GameState.Draw);
             return;
         }
 
+        Player proximo = player == Player.X ? Player.O : Player.X;
+        Debug.Log($"[GameManager] Vez do Player {proximo}.");
         SetState(player == Player.X ? GameState.PlayerOTurn : GameState.PlayerXTurn);
     }
 
